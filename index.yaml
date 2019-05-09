@@ -3,11 +3,11 @@ entries:
   metrics:
   - apiVersion: v1
     appVersion: "1"
-    created: 2019-05-08T19:43:25.930664985Z
+    created: 2019-05-09T07:58:41.086463015Z
     description: A Helm chart for Stratos Metrics
-    digest: a0113b8ee48bde7f3cfe41fe784d5e72e0dd39f0902ed2bcc8b74f4e394ae341
+    digest: 6f73b47ed6918dc7d395130f45f442ac39a231378eb662ce66014bfdea9cc2b2
     name: metrics
     urls:
     - https://github.com/nwmac/stratos-metrics/releases/download/1.1.0-rc.5/metrics-helm-chart-1.1.0-rc.5-234ad3e.tgz
     version: 1.1.0
-generated: 2019-05-08T19:43:25.922774105Z
+generated: 2019-05-09T07:58:41.080893009Z
