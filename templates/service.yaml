@@ -1,66 +1,55 @@
-{{- if .Values.firehoseExporter.enabled }}
-
-{{ $releaseName := .Release.Name }}
-{{ $firehoseExporter := .Values.firehoseExporter }}
-{{ $appVersion := .Chart.AppVersion }}
-{{ $cfName :=  .Values.cfName }}
-{{ $helmChartName :=  .Chart.Name }}
-{{ $helmChartVersion :=  .Chart.Version }}
-  {{- range int .Values.firehoseExporter.instances | until }}
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ $releaseName }}-{{ $firehoseExporter.serviceName }}-{{ . }}
-  labels:
-    app.kubernetes.io/name: "stratos-metrics"
-    app.kubernetes.io/instance: "{{ $releaseName }}"
-    app.kubernetes.io/version: "{{ $appVersion }}"
-    app.kubernetes.io/component: "stratos-metrics-{{ $cfName }}-firehose-exporter-service"
-    helm.sh/chart: "{{ $helmChartName }}-{{ $helmChartVersion | replace "+" "_" }}"
-spec:
-  type: {{ $firehoseExporter.serviceType }}
-  ports:
-  - port: {{ $firehoseExporter.externalPort }}
-    targetPort: {{ $firehoseExporter.internalPort }}
-    protocol: TCP
-    name: {{ $firehoseExporter.serviceName }}
-  selector:
-    app.kubernetes.io/name: "stratos-metrics"
-    app.kubernetes.io/component: "stratos-metrics-{{ $cfName }}-firehose-exporters-{{ . }}"
-  {{- end }}
+{{- if .Values.metrics.service -}}
+{{- if .Values.metrics.service.annotations }}
+  annotations:
+{{ toYaml .Values.metrics.service.annotations | indent 4 }}
 {{- end }}
-
-
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: {{ .Release.Name }}-{{ .Values.nginx.serviceName }}
+{{- end }}  
+  name: {{ .Release.Name }}-metrics-nginx
   labels:
     app.kubernetes.io/name: "stratos-metrics"
     app.kubernetes.io/instance: "{{ .Release.Name }}"
     app.kubernetes.io/version: "{{ .Chart.AppVersion }}"
-    app.kubernetes.io/component: "stratos-metrics-{{ .Values.cfName }}-nginx-service"
+    app.kubernetes.io/component: "stratos-metrics-nginx-service"
     helm.sh/chart: "{{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}"
 spec:
-{{- if .Values.useLb }}
-  type: LoadBalancer
-{{- else }}
-  type: {{ .Values.nginx.serviceType }}
+  type: {{ template "service.serviceType" . }}
+{{- if .Values.metrics.service }}
+{{- if .Values.metrics.service.clusterIP }}
+  clusterIP: {{ .Values.metrics.service.clusterIP }}
 {{- end }}
-{{- if or .Values.kube.external_ip .Values.kube.external_ips .Values.metrics.externalIP  }}
-  externalIPs: {{ template "service.externalIPs" . }} 
+{{- end }}
+{{- template "service.externalIPs" . }}
+{{- if .Values.metrics.service -}}
+{{- if .Values.metrics.service.loadBalancerIP }}
+  loadBalancerIP: {{ .Values.metrics.service.loadBalancerIP }}
+{{- end }}
+{{- end -}}
+{{- if .Values.metrics.service }}
+{{- if .Values.metrics.service.loadBalancerSourceRanges }}
+  loadBalancerSourceRanges:
+  {{- range $cidr := .Values.metrics.service.loadBalancerSourceRanges }}
+    - {{ $cidr }}
+  {{- end }}
+{{- end }}
+{{- end }}
+{{- if .Values.metrics.service -}}
+{{- if .Values.metrics.service.externalName }}
+  externalName: {{ .Values.metrics.service.externalName }}
+{{- end }}
 {{- end }}
   ports:
-{{- if and .Values.kube.external_metrics_port (or .Values.kube.external_ip .Values.kube.external_ips) }}
-  - port: {{ .Values.kube.external_metrics_port }}
-{{- else }}
-  - port: {{ .Values.nginx.externalPort }}
-{{- end }}
-    targetPort: 443
+  - name: nginx
+    port: {{ template "service.servicePort" . }}
     protocol: TCP
-    name: nginx
+    targetPort: 443
+    {{- if .Values.metrics.service.nodePort }}
+    nodePort: {{ .Values.metrics.service.nodePort }}
+    {{- end }}
   selector:
     app.kubernetes.io/name: "stratos-metrics"
-    app.kubernetes.io/component: "stratos-metrics-{{ .Values.cfName }}-nginx"
+    app.kubernetes.io/component: "stratos-metrics-nginx"
+
